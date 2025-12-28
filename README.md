@@ -1,4 +1,4 @@
-# Project-Structure-with-role-permissions
+# Multi-Tenant-Role-Permission-Management-System
 
 REST API for managing authors, categories, and publishers with token auth and role/permission access control.
 
