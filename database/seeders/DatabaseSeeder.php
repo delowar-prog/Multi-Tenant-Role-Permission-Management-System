@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Tenant;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -14,23 +15,22 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
 
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('password'),
-            'phone' => '01738118208',
-            'address' => 'Dhaka'
+        $this->call([
+            TenantSeeder::class,
+            AuthorSeeder::class,
+            CategorySeeder::class,
         ]);
 
-         $this->call([
-            AuthorSeeder::class,
-            PublisherSeeder::class,
-            CategorySeeder::class,
-            BookSeeder::class,
-            BookCopySeeder::class,
-            BorrowSeeder::class,
+        // User::factory(10)->create();
+        $tenant = Tenant::first(); // must exist
+        User::create([
+            'tenant_id' => $tenant->id ?? 1,
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('12345678'),
+            'phone' => '01738118208',
+            'address' => 'Dhaka'
         ]);
     }
 }

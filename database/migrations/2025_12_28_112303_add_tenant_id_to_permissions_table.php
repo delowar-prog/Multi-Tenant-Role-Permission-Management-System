@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('fines', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('borrow_id')->constrained('borrows')->cascadeOnDelete();
-            $table->decimal('amount', 8, 2);
-            $table->boolean('paid')->default(false);
-            $table->timestamps();
+        Schema::table('permissions', function (Blueprint $table) {
+            $table->foreignId('tenant_id')->nullable()->index();
         });
     }
 
@@ -25,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('fines');
+        Schema::table('permissions', function (Blueprint $table) {
+            //
+        });
     }
 };

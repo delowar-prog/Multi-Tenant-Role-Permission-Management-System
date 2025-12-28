@@ -19,13 +19,27 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-   protected $fillable = [
-        'name', 'email', 'password', 'phone', 'address'
+    protected $fillable = [
+        'tenant_id',
+        'name',
+        'email',
+        'password',
+        'phone',
+        'address'
     ];
-
-    public function borrows()
+    // User model-এ tenant auto assign করুন
+    protected static function booted()
     {
-        return $this->hasMany(Borrow::class);
+        static::creating(function ($user) {
+            if (!$user->tenant_id && auth()->check()) {
+                $user->tenant_id = auth()->user()->tenant_id;
+            }
+        });
+    }
+
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     /**

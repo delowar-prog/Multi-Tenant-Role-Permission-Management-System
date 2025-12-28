@@ -22,9 +22,10 @@ class RoleController
     {
         $validated = $request->validate([
             'name' => 'required|unique:roles,name',
+            'tenant_id' => 'required',
             'permissions' => 'array'
         ]);
-        $role = Role::create(['name' => $validated['name'], 'guard_name' => 'web']);
+        $role = Role::create(['tenant_id' => auth()->user()->tenant_id, 'name' => $validated['name'], 'guard_name' => 'web']);
 
         if (!empty($validated['permissions'])) {
             $permissions = collect($validated['permissions'])

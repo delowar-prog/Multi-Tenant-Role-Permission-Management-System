@@ -2,17 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\Borrow;
+use App\Models\Tenant;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
-class BorrowSeeder extends Seeder
+class TenantSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        Borrow::factory(30)->create();
+        Tenant::create([
+            'id' => Str::uuid(),
+            'name' => 'Admin Tenant'
+        ]);
     }
 }
