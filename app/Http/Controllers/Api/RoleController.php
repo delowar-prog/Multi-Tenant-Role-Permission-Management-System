@@ -22,7 +22,6 @@ class RoleController
     {
         $validated = $request->validate([
             'name' => 'required|unique:roles,name',
-            'tenant_id' => 'required',
             'permissions' => 'array'
         ]);
         $role = Role::create(['tenant_id' => auth()->user()->tenant_id, 'name' => $validated['name'], 'guard_name' => 'web']);
@@ -57,7 +56,7 @@ class RoleController
             'permissions' => 'array'
         ]);
 
-        $role->update(['name' => $validated['name'], 'guard_name' => 'web']);
+        $role->update(['tenant_id' => auth()->user()->tenant_id,'name' => $validated['name'], 'guard_name' => 'web']);
 
         if (isset($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);

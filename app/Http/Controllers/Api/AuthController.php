@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -18,21 +20,33 @@ class AuthController
             'phone' => 'nullable|string|max:11',
             'address' => 'nullable|string|max:200'
         ]);
+        DB::beginTransaction();
+        try {
+            $tenant = Tenant::create([
+                'name' => $fields['name'] . "'s Organization",
+            ]);
+            $user = User::create([
+                'tenant_id' => $tenant->id,
+                'name' => $fields['name'],
+                'email' => $fields['email'],
+                'password' => Hash::make($fields['password']),
+                'phone' => $fields['phone'],
+                'address' => $fields['address']
+            ]);
+            DB::commit();
+            $token = $user->createToken('auth_token')->plainTextToken;
 
-        $user = User::create([
-            'name' => $fields['name'],
-            'email' => $fields['email'],
-            'password' => Hash::make($fields['password']),
-            'phone' => $fields['phone'],
-            'address' => $fields['address']
-        ]);
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'user' => $user,
-            'token' => $token,
-        ], 201);
+            return response()->json([
+                'user' => $user,
+                'token' => $token,
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Registration failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function login(Request $request)
@@ -50,17 +64,32 @@ class AuthController
             ]);
         }
 
+        if (! $user->tenant_id) {
+            return response()->json([
+                'message' => 'Tenant not assigned'
+            ], 403);
+        }
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
+            'tenant_id' => $user->tenant_id,
             'token' => $token,
         ]);
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Logged out successfully']);
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $user->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logged out successfully'
+        ]);
     }
 }
