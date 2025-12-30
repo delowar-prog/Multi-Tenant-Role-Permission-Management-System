@@ -48,7 +48,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('authors', AuthorController::class);
     Route::apiResource('categories', CategoryController::class);
-    Route::apiResource('publishers', PublisherController::class);
 
     // ✅ Protected routes by role
     Route::get('/admin/dashboard', function () {

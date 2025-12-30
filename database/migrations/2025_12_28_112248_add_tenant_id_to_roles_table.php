@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('roles', function (Blueprint $table) {
-            $table->foreignId('tenant_id')->nullable()->index();
+            $table->uuid('tenant_id')->nullable()->index();
         });
     }
 

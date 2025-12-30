@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
 
 class PermissionController
 {
@@ -12,7 +12,10 @@ class PermissionController
      */
     public function index()
     {
+        // Debug tenant_id
+        // dd(auth()->user()->tenant_id);
         return Permission::paginate(10);
+        // return Permission::where('tenant_id', auth()->user()->tenant_id)->paginate();
     }
 
     /**
@@ -20,12 +23,19 @@ class PermissionController
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|unique:permissions,name',
         ]);
-        $validated['guard_name']='web';
-        $permission = Permission::create($validated);
-        return response()->json($permission, 201);
+        $permission = Permission::create([
+            'name' => $request->name,
+            'guard_name' => 'web',
+            'tenant_id' => auth()->user()->tenant_id,
+        ]);
+
+        return response()->json([
+            'message' => 'Permission created successfully',
+            'data' => $permission
+        ]);
     }
 
     /**
@@ -42,9 +52,9 @@ class PermissionController
     public function update(Request $request, Permission $permission)
     {
         $validated = $request->validate([
-            'name' => 'required|unique:permissions,name,'. $permission->id,
+            'name' => 'required|unique:permissions,name,' . $permission->id,
         ]);
-        
+
         $permission->update($validated);
         return response()->json($permission);
     }
