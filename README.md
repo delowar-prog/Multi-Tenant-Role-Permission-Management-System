@@ -1,6 +1,6 @@
 # Multi-Tenant-Role-Permission-Management-System
 
-REST API for managing authors, categories, and publishers with token auth and role/permission access control.
+REST API for multi-tenant role/permission management with Sanctum token auth and Spatie teams.
 
 ## Requirements
 
@@ -16,10 +16,11 @@ cp .env.example .env
 # PowerShell: Copy-Item .env.example .env
 php artisan key:generate
 php artisan migrate --seed
+php artisan db:seed --class=SuperAdminSeeder # optional
 php artisan serve
 ```
 
-Seeded admin user:
+Super admin credentials (if seeded):
 
 - Email: admin@gmail.com
 - Password: 12345678
@@ -34,14 +35,31 @@ Key pieces:
 - `app/Models/Tenant.php`: UUID primary key with auto-generated `id`, `users()` relation, and `$fillable` for tenant fields.
 - `database/migrations/0001_01_01_000001_create_users_table.php`: adds `users.tenant_id` UUID with FK to `tenants.id`.
 - `app/Models/User.php`: includes `tenant_id` in `$fillable`, auto-assigns it from the authenticated user on create, and defines `tenant()` relation.
-- `app/Http/Controllers/Api/AuthController.php`: registration creates a tenant and its first user in a transaction; login blocks users without a tenant.
-- `config/permission.php`: enables Spatie teams (`'teams' => true`) with `team_foreign_key` set to `tenant_id`, and uses custom `Role`/`Permission` models.
-- `app/Models/Role.php`, `app/Models/Permission.php`: extend Spatie models and apply the `BelongsToTenant` trait.
-- `app/Traits/BelongsToTenant.php`: adds a global `tenant_id` scope and auto-assigns `tenant_id` on create.
-- `app/Http/Middleware/SetTenantPermission.php` + `bootstrap/app.php`: sets `setPermissionsTeamId(auth()->user()->tenant_id)` on each request.
-- `database/migrations/2025_12_28_112248_add_tenant_id_to_roles_table.php`, `database/migrations/2025_12_28_112303_add_tenant_id_to_permissions_table.php`, `database/migrations/2025_12_29_135433_add_tenant_id_to_spatie_pivot_tables.php`: add `tenant_id` columns required by the teams setup.
+- `app/Traits/AssignTenant.php`: fills `tenant_id` on create using the authenticated user.
+- `app/Http/Controllers/Api/AuthController.php`: registration creates a tenant and its first user in a transaction; login blocks users without a tenant (except super admin).
+- `config/permission.php`: enables Spatie teams (`'teams' => true`) and uses custom `Role`/`Permission` models.
+- `database/migrations/2025_10_19_104201_create_permission_tables.php`: creates Spatie tables with teams enabled, and later migrations adjust the team key to UUIDs.
+- `app/Http/Middleware/SetTenantPermission.php` + `routes/api.php`: sets `setPermissionsTeamId(auth()->user()->tenant_id)` on each request for protected routes.
 - `app/Http/Controllers/Api/RoleController.php`, `app/Http/Controllers/Api/PermissionController.php`: create/update routes always write the current user's `tenant_id`.
-- `database/seeders/TenantSeeder.php` + `database/seeders/DatabaseSeeder.php`: seed a default tenant and the admin user.
+- `database/seeders/RoleSeeder.php`: seeds global permissions and the base `tenant-admin` role.
+
+## Super Admin (bypass permissions)
+
+Super admins bypass all permission checks and tenant restrictions:
+
+- `database/migrations/2026_01_01_105659_add_is_super_admin_to_users_table.php`: adds `is_super_admin`.
+- `app/Providers/AuthServiceProvider.php`: `Gate::before` returns `true` for super admins, granting all abilities.
+- `app/Http/Controllers/Api/AuthController.php`: login skips the tenant check for super admins.
+- `app/Models/User.php`: `scopeTenant()` returns all users for super admins.
+- `app/Http/Middleware/SuperAdminMiddleware.php` + `routes/api.php`: `super.admin` middleware protects super-admin-only routes.
+
+To create a super admin:
+
+```bash
+php artisan db:seed --class=SuperAdminSeeder
+```
+
+This seeds a global `super-admin` role, assigns all permissions, and sets `is_super_admin = true` for `admin@gmail.com`.
 
 ## Authentication
 
@@ -49,6 +67,8 @@ Key pieces:
 - POST `/api/login` (returns token)
 - Add header: `Authorization: Bearer <token>` for protected routes
 - POST `/api/logout`
+- GET `/api/user`
+- GET `/api/me`
 
 ## Roles and Permissions (brief)
 
@@ -57,31 +77,35 @@ This project uses `spatie/laravel-permission`. The permission tables are created
 
 Quick flow:
 
-1. Login as the seeded admin to get a token.
+1. Login as the super admin (if seeded) or any tenant user to get a token.
 2. Create permissions: POST `/api/permissions` with `{ "name": "view-categories" }`.
 3. Create a role with permissions: POST `/api/roles` with `{ "name": "admin", "permissions": ["view-categories"] }`.
 4. Assign the role to a user: POST `/api/users/{id}/assign-role` with `{ "role": "admin" }`.
 5. Verify with GET `/api/me`.
 
+Seeded global permissions (via `RoleSeeder`):
+
+- `manage_users`
+- `manage_roles`
+- `manage_permissions`
+
 Permission names used by controllers:
 
 - Authors: `view-authors`, `create-authors`, `update-authors`, `delete-authors`
 - Categories: `view-categories`, `create-categories`, `update-categories`, `delete-categories`
-- Publishers: `view-publishers`, `create-publishers`, `update-publishers`, `delete-publishers`
-- Reports: `view-report`
+- Users: `manage_users`
 
 ## API Routes
 
-All routes below require `auth:sanctum` unless noted.
+All routes below require `auth:sanctum` and `tenant.permission` unless noted.
 
-- Auth: `/api/register`, `/api/login`, `/api/logout`, `/api/me`
+- Auth: `/api/register`, `/api/login`
+- Session: `/api/logout`, `/api/user`, `/api/me`
 - Users: `/api/users`, `/api/users/{id}/*` (role/permission management)
 - Roles: `/api/roles`
 - Permissions: `/api/permissions`
 - Authors: `/api/authors`
 - Categories: `/api/categories`
-- Publishers: `/api/publishers`
-- Protected by role: GET `/api/admin/dashboard` (role: `admin`)
-- Protected by permission: GET `/api/report` (permission: `view-report`)
+- Super admin routes are grouped under `super.admin` middleware in `routes/api.php`.
 
 

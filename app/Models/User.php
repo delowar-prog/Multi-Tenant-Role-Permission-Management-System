@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Traits\AssignTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,7 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, HasRoles;
+    use HasFactory, Notifiable, HasApiTokens, HasRoles, AssignTenant;
 
     /**
      * The attributes that are mass assignable.
@@ -24,18 +26,26 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_super_admin',
         'phone',
         'address'
     ];
-    // User model-এ tenant auto assign করুন
-    protected static function booted()
+
+    /**
+     * Scope: only current tenant users & Super Admin can access all tenant
+     */
+    public function scopeTenant($query)
     {
-        static::creating(function ($user) {
-            if (!$user->tenant_id && auth()->check()) {
-                $user->tenant_id = auth()->user()->tenant_id;
-            }
-        });
+        if (
+            auth()->check() &&
+            ! auth()->user()->is_super_admin
+        ) {
+            return $query->where('tenant_id', auth()->user()->tenant_id);
+        }
+
+        return $query;
     }
+
 
     public function tenant()
     {

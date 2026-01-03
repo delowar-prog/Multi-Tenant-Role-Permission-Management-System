@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:manage_users')
+            ->only(['index', 'assignRole', 'removeRole', 'getRoles']);
+    }
     /**
      * Assign a role to a user.
      */
@@ -136,12 +140,34 @@ class UserController extends Controller
         ]);
     }
 
+    //create New user under a tenant
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'phone' => 'nullable|string|max:11',
+            'address' => 'nullable|string|max:200'
+        ]);
+
+        $user = User::create([
+            'name'     => $request->name,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
+            'phone'    => $request->phone,
+            'address'    => $request->address,
+            // tenant_id পাঠাতে হবে না
+        ]);
+
+        return response()->json($user);
+    }
     /**
      * Display a listing of users with their roles and permissions.
      */
     public function index()
     {
-        $users = User::with(['roles', 'permissions'])->paginate();
+        $users = User::with(['roles', 'permissions'])->tenant()->paginate();
 
         return response()->json($users);
     }
