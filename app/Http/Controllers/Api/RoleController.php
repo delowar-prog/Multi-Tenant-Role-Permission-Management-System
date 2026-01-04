@@ -1,12 +1,16 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Role;
 
-class RoleController
+class RoleController extends Controller
 {
+     public function __construct()
+    {
+        $this->middleware('permission:manage_roles')->only(['index', 'show', 'store', 'update', 'destroy']);
+    }
     /**
      * Display a listing of the resource.
      */
