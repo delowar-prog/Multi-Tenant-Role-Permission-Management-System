@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Tenant;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController
@@ -129,6 +131,16 @@ class AuthController
         ]);
     }
 
+    public function me()
+    {
+        $user = auth()->user();
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'roles' => $user->getRoleNames(),
+            'permissions' => $user->getAllPermissions()->pluck('name'),
+        ]);
+    }
     public function logout(Request $request)
     {
         $user = $request->user();
@@ -142,5 +154,27 @@ class AuthController
         return response()->json([
             'message' => 'Logged out successfully'
         ]);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        ResetPassword::createUrlUsing(function ($notifiable, string $token) {
+            $baseUrl = rtrim(config('app.frontend_url'), '/');
+            $email = urlencode($notifiable->getEmailForPasswordReset());
+
+            return "{$baseUrl}/reset-password?token={$token}&email={$email}";
+        });
+
+        $status = Password::sendResetLink($request->only('email'));
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json(['message' => __($status)]);
+        }
+
+        return response()->json(['message' => __($status)], 422);
     }
 }

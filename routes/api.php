@@ -8,34 +8,23 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserController;
-
+use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ResetPasswordController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 
 Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     //get authenticate user
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-    Route::get('/me', function () {
-        $user = auth()->user();
-        // ✅ Set Spatie team context for tenant
-        app(\Spatie\Permission\PermissionRegistrar::class)
-            ->setPermissionsTeamId($user->tenant_id);
-            
-        return response()->json([
-            'id' => $user->id,
-            'name' => $user->name,
-            'roles' => $user->getRoleNames(),
-            'permissions' => $user->getAllPermissions()->pluck('name'),
-        ]);
-    });
-
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/profile', [ProfileController::class, 'show']);
     // ✅ Role & Permission CRUD
     Route::apiResource('roles', RoleController::class);
     Route::apiResource('permissions', PermissionController::class);
+    Route::get('all-permissions',[PermissionController::class, 'getPermissions']);
 
     // ✅ User CRUD and role/permission management
     Route::apiResource('users', UserController::class);

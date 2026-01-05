@@ -8,19 +8,22 @@ use App\Models\Permission;
 
 class PermissionController extends Controller
 {
-        public function __construct()
-        {
-            $this->middleware('permission:manage_permissions')->only(['index', 'show']);
-        }
+    public function __construct()
+    {
+        $this->middleware('permission:manage_permissions')->only(['index', 'show']);
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        // Debug tenant_id
-        // dd(auth()->user()->tenant_id);
         return Permission::paginate(10);
-        // return Permission::where('tenant_id', auth()->user()->tenant_id)->paginate();
+    }
+
+    //Get all permission using distinc() method for remove duplicate 
+    public function getPermissions()
+    {
+        return Permission::query()->distinct()->get();
     }
 
     /**
