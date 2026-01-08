@@ -12,11 +12,28 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('model_has_roles', function (Blueprint $table) {
-            $table->uuid('team_id')->change();
+            // Drop primary key first
+            $table->dropPrimary();
+
+            // Make team_id nullable
+            $table->uuid('team_id')->nullable()->change();
+
+            // Re-add UNIQUE constraint instead of PK
+            $table->unique(
+                ['role_id', 'model_id', 'model_type', 'team_id'],
+                'model_has_roles_unique'
+            );
         });
 
         Schema::table('model_has_permissions', function (Blueprint $table) {
-            $table->uuid('team_id')->change();
+            $table->dropPrimary();
+
+            $table->uuid('team_id')->nullable()->change();
+
+            $table->unique(
+                ['permission_id', 'model_id', 'model_type', 'team_id'],
+                'model_has_permissions_unique'
+            );
         });
 
         Schema::table('roles', function (Blueprint $table) {
@@ -24,7 +41,11 @@ return new class extends Migration
         });
 
         Schema::table('permissions', function (Blueprint $table) {
-            $table->uuid('team_id')->nullable();
+            if (!Schema::hasColumn('permissions', 'team_id')) {
+                $table->uuid('team_id')->nullable()->index();
+            } else {
+                $table->uuid('team_id')->nullable()->change();
+            }
         });
     }
 };

@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 
 class AuthController
@@ -48,40 +49,44 @@ class AuthController
             app(\Spatie\Permission\PermissionRegistrar::class)
                 ->setPermissionsTeamId($tenant->id);
 
-            // 4️⃣ Copy global permissions to this tenant
-            $globalPermissions = Permission::where('team_id', null) // global permissions
-                ->get();
+            // 2️⃣ Tenant permissions list
+            $permissions = [
+                'manage_users',
+                'manage_roles',
+                'manage_permissions',
+            ];
 
-            foreach ($globalPermissions as $perm) {
+            // 3️⃣ Create permissions for this tenant
+            foreach ($permissions as $permName) {
                 Permission::firstOrCreate([
-                    'name' => $perm->name,
-                    'team_id' => $tenant->id,
-                    'guard_name' => $perm->guard_name,
+                    'name'       => $permName,
+                    'team_id'    => $tenant->id,
+                    'guard_name' => 'web',
                 ]);
             }
 
-            // 5️⃣ Create tenant-admin role for this tenant
+            // 4️⃣ Create tenant-admin role
             $role = Role::firstOrCreate([
-                'name' => 'tenant-admin',
-                'team_id' => $tenant->id,
-                'guard_name' => 'web'
+                'name'       => 'tenant-admin',
+                'team_id'    => $tenant->id,
+                'guard_name' => 'web',
             ]);
 
-            // 6️⃣ Assign tenant permissions to tenant role
-            $role->syncPermissions(Permission::where('team_id', $tenant->id)->pluck('name')->toArray());
+            // 5️⃣ Assign permissions to role (IMPORTANT: pass models)
+            $tenantPermissions = Permission::where('team_id', $tenant->id)->get();
+            $role->syncPermissions($tenantPermissions);
 
-            // 7️⃣ Assign role to user (fills model_has_roles)
+
+            // 6️⃣ Assign role to user
             $user->assignRole($role);
-
-            // 8️⃣ Optional: assign direct permissions to user (fills model_has_permissions)
-            $user->givePermissionTo(Permission::where('team_id', $tenant->id)->pluck('name')->toArray());
-
+            $user->syncPermissions($tenantPermissions);
             DB::commit();
 
+            // 7️⃣ Create auth token
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
-                'user' => $user,
+                'user'  => $user,
                 'token' => $token,
             ], 201);
         } catch (\Exception $e) {
@@ -137,6 +142,7 @@ class AuthController
         return response()->json([
             'id' => $user->id,
             'name' => $user->name,
+            'is_super_admin' => $user->is_super_admin,
             'roles' => $user->getRoleNames(),
             'permissions' => $user->getAllPermissions()->pluck('name'),
         ]);
@@ -153,6 +159,34 @@ class AuthController
 
         return response()->json([
             'message' => 'Logged out successfully'
+        ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Current password is incorrect.'
+            ], 422);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+        ])->save();
+
+        return response()->json([
+            'message' => 'Password changed successfully'
         ]);
     }
 
