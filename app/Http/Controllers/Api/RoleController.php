@@ -1,13 +1,15 @@
 <?php
 
 namespace App\Http\Controllers\Api;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Role;
+use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
-     public function __construct()
+    public function __construct()
     {
         $this->middleware('permission:manage_roles')->only(['index', 'show', 'store', 'update', 'destroy']);
     }
@@ -16,7 +18,7 @@ class RoleController extends Controller
      */
     public function index()
     {
-        return Role::with('permissions')->paginate();
+        return Role::with('permissions')->tenant()->paginate(10);
     }
 
     /**
@@ -25,10 +27,16 @@ class RoleController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|unique:roles,name',
+            'name' => [
+                'required',
+                Rule::unique('roles')->where(fn($q) =>
+                        $q->where('team_id'), // team_id
+                            auth()->user()->tenant_id
+                        ),
+            ],
             'permissions' => 'array'
         ]);
-        $role = Role::create(['tenant_id' => auth()->user()->tenant_id, 'name' => $validated['name'], 'guard_name' => 'web']);
+        $role = Role::create(['team_id' => auth()->user()->tenant_id, 'name' => $validated['name'], 'guard_name' => 'web']);
 
         if (!empty($validated['permissions'])) {
             $permissions = collect($validated['permissions'])
@@ -60,7 +68,7 @@ class RoleController extends Controller
             'permissions' => 'array'
         ]);
 
-        $role->update(['tenant_id' => auth()->user()->tenant_id,'name' => $validated['name'], 'guard_name' => 'web']);
+        $role->update(['tenant_id' => auth()->user()->tenant_id, 'name' => $validated['name'], 'guard_name' => 'web']);
 
         if (isset($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);

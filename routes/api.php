@@ -42,10 +42,3 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::apiResource('categories', CategoryController::class);
 });
 
-
-// Super Admin Panel Routes
-Route::middleware(['auth:sanctum', 'super.admin'])->group(function () {
-    // Route::resource('tenants', TenantController::class);
-    // Route::resource('permissions', PermissionController::class);
-    // Route::apiResource('users', UserController::class);
-});

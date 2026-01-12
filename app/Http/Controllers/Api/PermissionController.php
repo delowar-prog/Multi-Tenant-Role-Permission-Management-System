@@ -17,7 +17,7 @@ class PermissionController extends Controller
      */
     public function index()
     {
-        return Permission::paginate(10);
+        return Permission::tenant()->paginate(10);
     }
 
     //Get all permission using distinc() method for remove duplicate 

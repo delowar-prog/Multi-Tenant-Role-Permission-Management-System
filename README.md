@@ -43,6 +43,14 @@ Key pieces:
 - `app/Http/Controllers/Api/RoleController.php`, `app/Http/Controllers/Api/PermissionController.php`: create/update routes always write the current user's `tenant_id`.
 - `database/seeders/RoleSeeder.php`: seeds global permissions and the base `tenant-admin` role.
 
+## Tenant-Scoped Permission Fixes (important)
+
+These changes prevent cross-tenant permission lookups and 403 errors when multiple organizations exist:
+
+- `app/Models/Permission.php`: overrides Spatie lookup helpers (`findByName`, `findById`, `create`, `findOrCreate`) to always include the current team/tenant. Without this, Spatie can resolve the first tenant's permission record and deny access for other tenants.
+- `app/Http/Controllers/Api/AuthController.php`: creates roles/permissions using `config('permission.team_foreign_key')` (not hardcoded), so data is stored with the correct tenant key.
+- `app/Http/Controllers/Api/RoleController.php`, `app/Http/Controllers/Api/PermissionController.php`, `app/Http/Controllers/Api/UserController.php`: validation now scopes `unique`/`exists` rules to the current tenant to avoid cross-tenant conflicts.
+
 ## Super Admin (bypass permissions)
 
 Super admins bypass all permission checks and tenant restrictions:
