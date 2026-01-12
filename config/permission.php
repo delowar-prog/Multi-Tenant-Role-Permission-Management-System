@@ -133,7 +133,7 @@ return [
      * (view the latest version of this package's migration file)
      */
 
-    //update the bellow 2 line for multi-tenancy
+    //update the bellow 2 line for multi-tenancy enabled
     'teams' => true,
     'team_foreign_key' => 'tenant_id',
 

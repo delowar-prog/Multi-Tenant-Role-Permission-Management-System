@@ -31,17 +31,14 @@ This project uses a single database with per-tenant scoping via `tenant_id`, plu
 
 Key pieces:
 
-- `database/migrations/0001_01_01_000000_create_tenants_table.php`: creates `tenants` with UUID `id`, `name`, and optional `domain` (add more fields as needed).
-- `app/Models/Tenant.php`: UUID primary key with auto-generated `id`, `users()` relation, and `$fillable` for tenant fields.
-- `database/migrations/0001_01_01_000001_create_users_table.php`: adds `users.tenant_id` UUID with FK to `tenants.id`.
+- `create_tenants_table`: creates `tenants` with UUID `id`, `name`, and optional `domain` (add more fields as needed).
 - `app/Models/User.php`: includes `tenant_id` in `$fillable`, auto-assigns it from the authenticated user on create, and defines `tenant()` relation.
 - `app/Traits/AssignTenant.php`: fills `tenant_id` on create using the authenticated user.
-- `app/Http/Controllers/Api/AuthController.php`: registration creates a tenant and its first user in a transaction; login blocks users without a tenant (except super admin).
+- `AuthController.php`: registration creates a tenant and its first user in a transaction; login blocks users without a tenant (except super admin).
 - `config/permission.php`: enables Spatie teams (`'teams' => true`) and uses custom `Role`/`Permission` models.
-- `database/migrations/2025_10_19_104201_create_permission_tables.php`: creates Spatie tables with teams enabled, and later migrations adjust the team key to UUIDs.
-- `app/Http/Middleware/SetTenantPermission.php` + `routes/api.php`: sets `setPermissionsTeamId(auth()->user()->tenant_id)` on each request for protected routes.
+- `create_permission_tables.php`: creates Spatie tables with teams enabled, and later migrations adjust the team key to UUIDs.
+- `Middleware/SetTenantPermission.php` + `routes/api.php`: sets `setPermissionsTeamId(auth()->user()->tenant_id)` on each request for protected routes.
 - `app/Http/Controllers/Api/RoleController.php`, `app/Http/Controllers/Api/PermissionController.php`: create/update routes always write the current user's `tenant_id`.
-- `database/seeders/RoleSeeder.php`: seeds global permissions and the base `tenant-admin` role.
 
 ## Tenant-Scoped Permission Fixes (important)
 
@@ -116,4 +113,14 @@ All routes below require `auth:sanctum` and `tenant.permission` unless noted.
 - Categories: `/api/categories`
 - Super admin routes are grouped under `super.admin` middleware in `routes/api.php`.
 
+## New Module Checklist (avoid permission breakage)
+
+- Define permission names for each action (example: `view-products`, `create-products`, `update-products`, `delete-products`).
+- Create permissions with the tenant key (`config('permission.team_foreign_key')`), not hardcoded `team_id`.
+- Ensure `SetTenantPermission` runs after auth and before `permission`/`role` middleware (see `bootstrap/app.php` priority).
+- Put new routes inside the `auth:sanctum` + `tenant.permission` group.
+- Add `permission:` middleware to controllers per action.
+- Scope `unique`/`exists` validation rules by tenant in controllers.
+- Reset permission cache after adding new permissions: `php artisan permission:cache-reset`.
+- Keep `guard_name` consistent (typically `web`) across roles/permissions.
 
