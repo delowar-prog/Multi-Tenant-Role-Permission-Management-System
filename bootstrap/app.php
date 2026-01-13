@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckTenantSubscription;
 use App\Http\Middleware\SetTenantPermission;
 use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Foundation\Application;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'super.admin' => SuperAdminMiddleware::class,
             'tenant.permission' => SetTenantPermission::class,
+            'tenant.subscription' => CheckTenantSubscription::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

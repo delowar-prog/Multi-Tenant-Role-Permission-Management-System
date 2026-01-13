@@ -12,6 +12,8 @@ class Tenant extends Model
 
     protected $fillable = [
         'name',
+        'plan_id',
+        'subscription_expires_at',
         // যদি আরও ফিল্ড থাকে, যেমন 'domain', 'uuid', add here
     ];
     public $incrementing = false;
@@ -29,3 +31,4 @@ class Tenant extends Model
         return $this->hasMany(User::class);
     }
 }
+

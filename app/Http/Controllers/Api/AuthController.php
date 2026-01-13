@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Permission;
+use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -23,17 +24,28 @@ class AuthController
             'email' => 'required|string|unique:users,email',
             'password' => 'required|string|min:6',
             'phone' => 'nullable|string|max:11',
-            'address' => 'nullable|string|max:200'
+            'address' => 'nullable|string|max:200',
+            'plan_id' => 'nullable|exists:plans,id',
         ]);
 
         DB::beginTransaction();
 
         try {
+            $plan = null;
+            if (! empty($fields['plan_id'])) {
+                $plan = Plan::find($fields['plan_id']);
+            }
             // 1️⃣ Create Tenant
-            $tenant = Tenant::create([
+            $tenantData = [
                 'name' => $fields['name'] . "'s Organization",
-            ]);
+            ];
 
+            if ($plan) {
+                $tenantData['plan_id'] = $plan->id;
+                $tenantData['subscription_expires_at'] = now()->addDays($plan->duration_days);
+            }
+
+            $tenant = Tenant::create($tenantData);
             // 2️⃣ Create User
             $user = User::create([
                 'tenant_id' => $tenant->id,
@@ -212,3 +224,5 @@ class AuthController
         return response()->json(['message' => __($status)], 422);
     }
 }
+
+

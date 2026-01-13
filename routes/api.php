@@ -10,11 +10,14 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ResetPasswordController;
+use App\Http\Controllers\Api\PlanController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
+Route::get('/landing/plans', [PlanController::class, 'landingIndex']);
+Route::get('/landing/plans/{plan}', [PlanController::class, 'landingShow']);
 
 Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -40,5 +43,5 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
 
     Route::apiResource('authors', AuthorController::class);
     Route::apiResource('categories', CategoryController::class);
+    Route::apiResource('plans', PlanController::class);
 });
-
