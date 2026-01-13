@@ -26,12 +26,12 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/profile', [ProfileController::class, 'show']);
     // ✅ Role & Permission CRUD
-    Route::apiResource('roles', RoleController::class);
-    Route::apiResource('permissions', PermissionController::class);
+    Route::apiResource('roles', RoleController::class)->middleware('feature:branding');
+    Route::apiResource('permissions', PermissionController::class)->middleware('feature:branding');
     Route::get('all-permissions',[PermissionController::class, 'getPermissions']);
 
     // ✅ User CRUD and role/permission management
-    Route::apiResource('users', UserController::class);
+    Route::apiResource('users', UserController::class)->middleware('feature:branding');
     Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
     Route::post('users/{user}/remove-role', [UserController::class, 'removeRole']);
     Route::post('users/{user}/sync-roles', [UserController::class, 'syncRoles']);

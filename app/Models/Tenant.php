@@ -30,5 +30,30 @@ class Tenant extends Model
     {
         return $this->hasMany(User::class);
     }
-}
 
+    public function plan()
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function feature(string $key, $default = false): bool
+    {
+        if (!$this->plan) {
+            return $default;
+        }
+
+        $features = optional($this->plan)->features;
+
+        // If features is still a string (JSON), decode it
+        if (is_string($features)) {
+            $features = json_decode($features, true);
+        }
+
+        // 🔥 MUST be array
+        if (!is_array($features)) {
+            return $default;
+        }
+
+        return (bool) ($features[$key] ?? $default);
+    }
+}
