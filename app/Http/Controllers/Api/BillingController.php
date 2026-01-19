@@ -15,13 +15,4 @@ class BillingController extends Controller
         ]);
     }
 
-    public function subscribe(Request $request, Plan $plan)
-    {
-        // Next step: SSLCommerz session create
-
-        return response()->json([
-            'message' => 'Proceed to payment',
-            'plan' => $plan,
-        ]);
-    }
 }

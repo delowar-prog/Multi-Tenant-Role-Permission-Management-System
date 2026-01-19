@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::table('tenants', function (Blueprint $table) {
             $table->foreignId('plan_id')->nullable()->constrained();
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('address')->nullable();
             $table->date('subscription_started_at')->nullable();
             $table->date('subscription_expires_at')->nullable();
             $table->enum('subscription_status', ['active', 'expired', 'cancelled']);

@@ -16,6 +16,10 @@ class Tenant extends Model
 
     protected $fillable = [
         'name',
+        'email',
+        'phone',
+        'address',
+        'logo',
         'plan_id',
         'subscription_started_at',
         'subscription_expires_at',

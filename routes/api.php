@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ResetPasswordController;
 use App\Http\Controllers\Api\PlanController;
+use App\Http\Controllers\Api\SslCommerzController;
+use App\Http\Controllers\Api\TenantController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -25,14 +27,22 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
     Route::get('/plans', [BillingController::class, 'plans']);
-    Route::post('/subscribe/{plan}', [BillingController::class, 'subscribe']);
+    // Route::post('/subscribe/{plan}', [BillingController::class, 'subscribe']);
+
+    //SSLcommerz
+    Route::post('/payments/sslcommerz/initiate', [SslCommerzController::class, 'initiate']);
+    Route::post('/payments/sslcommerz/success', [SslCommerzController::class, 'success'])->name('ssl.success');
+    Route::post('/payments/sslcommerz/fail', [SslCommerzController::class, 'fail'])->name('ssl.fail');
+    Route::post('/payments/sslcommerz/cancel', [SslCommerzController::class, 'cancel'])->name('ssl.cancel');
+
     //get authenticate user
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/profile', [ProfileController::class, 'show']);
+
     // ✅ Role & Permission CRUD
     Route::apiResource('roles', RoleController::class)->middleware('feature:branding');
     Route::apiResource('permissions', PermissionController::class)->middleware('feature:branding');
-    Route::get('all-permissions',[PermissionController::class, 'getPermissions']);
+    Route::get('all-permissions', [PermissionController::class, 'getPermissions']);
 
     // ✅ User CRUD and role/permission management
     Route::apiResource('users', UserController::class)->middleware('tenant.subscription');
@@ -44,6 +54,10 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::post('users/{user}/remove-permission', [UserController::class, 'removePermission']);
     Route::post('users/{user}/sync-permissions', [UserController::class, 'syncPermissions']);
     Route::get('users/{user}/permissions', [UserController::class, 'getPermissions']);
+
+    //Accounts Setting
+    Route::get('/tenant', [TenantController::class, 'show']);
+    Route::post('/tenant/update', [TenantController::class, 'update']);
 
     Route::apiResource('authors', AuthorController::class);
     Route::apiResource('categories', CategoryController::class);
