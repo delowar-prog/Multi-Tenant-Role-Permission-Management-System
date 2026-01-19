@@ -15,7 +15,7 @@ class CheckTenantSubscription
      */
     public function handle(Request $request, Closure $next): Response
     {
-         $user = auth()->user();
+        $user = auth()->user();
 
         // super admin skip
         if ($user->is_super_admin) {
@@ -24,14 +24,32 @@ class CheckTenantSubscription
 
         $tenant = $user->tenant;
 
-        if (!$tenant || !$tenant->subscription_expires_at) {
-            abort(403, 'Subscription not active');
+        if (!$tenant) {
+            abort(403, 'Tenant not found');
         }
 
-        if (now()->greaterThan($tenant->subscription_expires_at)) {
-            abort(403, 'Subscription expired');
+        //    Trial active থাকলে full access
+        if ($tenant->trial_ends_at && now()->lt($tenant->trial_ends_at)) {
+            return $next($request);
         }
+        /*
+    |--------------------------------------------------------------------------
+    | Paid subscription check
+    |--------------------------------------------------------------------------
+    */
+        $activeSubscription = $tenant->subscriptions()
+            ->active() // status = active + not expired
+            ->first();
 
-        return $next($request);
+        if ($activeSubscription) {
+            return $next($request);
+        }
+        
+    // Trial expired & no subscription
+    return response()->json([
+        'message' => 'Trial expired',
+        'redirect' => '/billing',
+        'code' => 'SUBSCRIPTION_REQUIRED',
+    ], 402);
     }
 }

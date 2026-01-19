@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Permission\Contracts\Role as RoleContract;
 use Spatie\Permission\Exceptions\RoleAlreadyExists;
 use Spatie\Permission\Exceptions\RoleDoesNotExist;
@@ -102,17 +103,23 @@ class Role extends SpatieRole
         return $query->first();
     }
 
-    public function scopeTenant(Builder $query): Builder
+    // is role visible
+    public function scopeVisibleTo($query, $user)
     {
-        // 🔥 Super Admin → all permissions
-        if (auth()->check() && auth()->user()?->is_super_admin) {
+        // 🔥 Super admin → see everything
+        if ($user->is_super_admin) {
             return $query;
         }
 
-        // ✅ get actual team column name (team_id)
-        $teamKey = app(PermissionRegistrar::class)->teamsKey;
-        // OR: config('permission.team_foreign_key');
+        // 👤 Tenant user → global + own tenant roles only
+        return $query->where(function ($q) use ($user) {
+            $q->whereNull('team_id')
+                ->orWhere('team_id', $user->tenant_id);
+        });
+    }
 
-        return $query->where($teamKey, auth()->user()->tenant_id);
+  public function tenant()
+    {
+        return $this->belongsTo(Tenant::class, 'team_id');
     }
 }

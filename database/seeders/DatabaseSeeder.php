@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             SuperAdminSeeder::class,
             PlanSeeder::class,
+            RoleSeeder::class,
+
         ]);
     }
 }

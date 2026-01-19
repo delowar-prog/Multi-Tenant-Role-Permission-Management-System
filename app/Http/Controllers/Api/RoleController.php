@@ -11,16 +11,16 @@ class RoleController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:manage_roles')->only(['index', 'show', 'store', 'update', 'destroy']);
+        $this->middleware('permission:view-roles')->only(['index', 'show']);
+        $this->middleware('permission:manage-roles')->only(['store', 'update', 'destroy']);
     }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return Role::with('permissions')->tenant()->paginate(10);
+        return Role::visibleTo(auth()->user())->with(['permissions','tenant'])->paginate(10);
     }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -29,14 +29,23 @@ class RoleController extends Controller
         $validated = $request->validate([
             'name' => [
                 'required',
-                Rule::unique('roles')->where(fn($q) =>
-                        $q->where('team_id'), // team_id
-                            auth()->user()->tenant_id
-                        ),
+                // same tenant এ duplicate না হয়
+                Rule::unique('roles', 'name')->where(function ($query) {
+                    return $query->where(
+                        'team_id',
+                        auth()->user()->is_super_admin
+                            ? null
+                            : auth()->user()->tenant_id
+                    );
+                }),
             ],
             'permissions' => 'array'
         ]);
-        $role = Role::create(['team_id' => auth()->user()->tenant_id, 'name' => $validated['name'], 'guard_name' => 'web']);
+
+        // 🔥 Determine role scope
+        $isSuperAdmin = auth()->user()->is_super_admin;
+
+        $role = Role::create(['team_id' => $isSuperAdmin ? null : auth()->user()->tenant_id, 'name' => $validated['name'], 'guard_name' => 'web']);
 
         if (!empty($validated['permissions'])) {
             $permissions = collect($validated['permissions'])

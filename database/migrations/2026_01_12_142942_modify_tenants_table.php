@@ -13,7 +13,10 @@ return new class extends Migration
     {
         Schema::table('tenants', function (Blueprint $table) {
             $table->foreignId('plan_id')->nullable()->constrained();
+            $table->date('subscription_started_at')->nullable();
             $table->date('subscription_expires_at')->nullable();
+            $table->enum('subscription_status', ['active', 'expired', 'cancelled']);
+            $table->date('trial_ends_at')->nullable();
             $table->string('logo')->nullable();
             $table->string('primary_color')->default('#2563eb');
             $table->string('secondary_color')->nullable();

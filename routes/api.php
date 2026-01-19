@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BillingController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserController;
@@ -22,6 +23,9 @@ Route::get('/landing/plans/{plan}', [PlanController::class, 'landingShow']);
 Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    Route::get('/plans', [BillingController::class, 'plans']);
+    Route::post('/subscribe/{plan}', [BillingController::class, 'subscribe']);
     //get authenticate user
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/profile', [ProfileController::class, 'show']);
@@ -31,7 +35,7 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::get('all-permissions',[PermissionController::class, 'getPermissions']);
 
     // ✅ User CRUD and role/permission management
-    Route::apiResource('users', UserController::class)->middleware('feature:branding');
+    Route::apiResource('users', UserController::class)->middleware('tenant.subscription');
     Route::post('users/{user}/assign-role', [UserController::class, 'assignRole']);
     Route::post('users/{user}/remove-role', [UserController::class, 'removeRole']);
     Route::post('users/{user}/sync-roles', [UserController::class, 'syncRoles']);

@@ -13,6 +13,7 @@ class PlanSeeder extends Seeder
             [
                 'name' => 'Free',
                 'price' => 0,
+                'billing_cycle' => "monthly",
                 'duration_days' => 30,
                 'features' => [
                     'users' => 3,
@@ -23,8 +24,9 @@ class PlanSeeder extends Seeder
                 ],
             ],
             [
-                'name' => 'Basic',
+                'name' => 'Monthly',
                 'price' => 999,
+                'billing_cycle' => "monthly",
                 'duration_days' => 30,
                 'features' => [
                     'users' => 10,
@@ -33,10 +35,12 @@ class PlanSeeder extends Seeder
                     'storage_mb' => 2000,
                     'support' => 'standard',
                 ],
+                
             ],
             [
-                'name' => 'Pro',
+                'name' => 'Yearly',
                 'price' => 1999,
+                'billing_cycle' => "Yearly",
                 'duration_days' => 30,
                 'features' => [
                     'users' => 20,
@@ -53,6 +57,7 @@ class PlanSeeder extends Seeder
                 ['name' => $plan['name']],
                 [
                     'price' => $plan['price'],
+                    'billing_cycle' => $plan['billing_cycle'],
                     'duration_days' => $plan['duration_days'],
                     'features' => $plan['features'],
                 ]

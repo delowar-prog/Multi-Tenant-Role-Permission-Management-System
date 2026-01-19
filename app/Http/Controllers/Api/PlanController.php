@@ -8,15 +8,7 @@ use Illuminate\Http\Request;
 
 class PlanController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:view-plans')->only(['index', 'show']);
-        $this->middleware('permission:create-plans')->only(['store']);
-        $this->middleware('permission:update-plans')->only(['update']);
-        $this->middleware('permission:delete-plans')->only(['destroy']);
-    }
-
-    public function index(Request $request)
+   public function index(Request $request)
     {
         $perPage = (int) $request->query('perpage', 15);
         $perPage = $perPage > 0 ? $perPage : 15;

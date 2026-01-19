@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
+use App\Models\TenantSubscription;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Http\Request;
 use App\Models\User;
@@ -37,15 +38,29 @@ class AuthController
             }
             // 1️⃣ Create Tenant
             $tenantData = [
-                'name' => $fields['name'] . "'s Organization",
+                'name' => $fields['name'],
             ];
 
             if ($plan) {
                 $tenantData['plan_id'] = $plan->id;
+                $tenantData['billing_cycle'] = $plan->billing_cycle;
+                $tenantData['subscription_started_at'] = now();
                 $tenantData['subscription_expires_at'] = now()->addDays($plan->duration_days);
+                $tenantData['subscription_status'] = 'active';
+                $tenantData['trial_ends_at'] = $plan->trial_days ? now()->addDays($plan->trial_days): null;
             }
 
             $tenant = Tenant::create($tenantData);
+
+            TenantSubscription::create([
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'subscription_started_at' => now(),
+                'subscription_expires_at' => now()->addDays($plan->duration_days),
+                'amount' => $plan->price,
+                'billing_cycle' => $plan->billing_cycle,
+                'status' => 'active',
+            ]);
             // 2️⃣ Create User
             $user = User::create([
                 'tenant_id' => $tenant->id,
@@ -61,37 +76,9 @@ class AuthController
             app(\Spatie\Permission\PermissionRegistrar::class)
                 ->setPermissionsTeamId($tenant->id);
 
-            // 2️⃣ Tenant permissions list
-            $permissions = [
-                'manage_users',
-                'manage_roles',
-                'manage_permissions',
-            ];
-
-            // 3️⃣ Create permissions for this tenant
-            foreach ($permissions as $permName) {
-                Permission::firstOrCreate([
-                    'name'       => $permName,
-                    'team_id'    => $tenant->id,
-                    'guard_name' => 'web',
-                ]);
-            }
-
-            // 4️⃣ Create tenant-admin role
-            $role = Role::firstOrCreate([
-                'name'       => 'tenant-admin',
-                'team_id'    => $tenant->id,
-                'guard_name' => 'web',
-            ]);
-
-            // 5️⃣ Assign permissions to role (IMPORTANT: pass models)
-            $tenantPermissions = Permission::where('team_id', $tenant->id)->get();
-            $role->syncPermissions($tenantPermissions);
-
-
+            $role = Role::where('name', 'tenant-admin')->first();
             // 6️⃣ Assign role to user
             $user->assignRole($role);
-            $user->syncPermissions($tenantPermissions);
             DB::commit();
 
             // 7️⃣ Create auth token
@@ -224,5 +211,3 @@ class AuthController
         return response()->json(['message' => __($status)], 422);
     }
 }
-
-

@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');           // Free, Basic, Pro
+            $table->enum('billing_cycle', ['monthly', 'yearly', 'lifetime']);  // monthly, yearly
             $table->decimal('price', 10, 2);
             $table->integer('duration_days'); // 30, 365
+            $table->integer('trial_days')->nullable(); // 30, 365
             $table->json('features')->nullable();         // {"users":5,"storage":500,"branding":false}
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

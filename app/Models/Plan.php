@@ -13,8 +13,11 @@ class Plan extends Model
     protected $fillable = [
         'name',
         'price',
+        'billing_cycle',
         'duration_days',
+        'trial_days',
         'features',
+        'is_active',
     ];
    
     // null-safe default

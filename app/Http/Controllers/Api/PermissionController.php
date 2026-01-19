@@ -10,14 +10,15 @@ class PermissionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:manage_permissions')->only(['index', 'show']);
+        $this->middleware('permission:view-permissions')->only(['index', 'show']);
+        $this->middleware('permission:manage-permissions')->only(['store', 'update', 'destroy']);
     }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return Permission::tenant()->paginate(10);
+        return Permission::paginate(10);
     }
 
     //Get all permission using distinc() method for remove duplicate 
@@ -34,10 +35,12 @@ class PermissionController extends Controller
         $request->validate([
             'name' => 'required|unique:permissions,name',
         ]);
+        if(!auth()->user()->is_super_admin){
+            return true;
+        }
         $permission = Permission::create([
             'name' => $request->name,
             'guard_name' => 'web',
-            'tenant_id' => auth()->user()->tenant_id,
         ]);
 
         return response()->json([

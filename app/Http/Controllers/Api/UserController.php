@@ -11,7 +11,9 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:manage_users')
+        $this->middleware('permission:view-users')
+            ->only(['index', 'show']);
+        $this->middleware('permission:manage-users')
             ->only(['index', 'assignRole', 'removeRole', 'getRoles']);
     }
     /**

@@ -15,7 +15,12 @@ class EnsureFeatureEnabled
      */
     public function handle(Request $request, Closure $next, string $feature): Response
     {
-        if (!tenantFeature($feature, false)) {
+        // 🔥 SUPER ADMIN BYPASS — এখানেই বসবে
+        if (auth()->check() && auth()->user()->is_super_admin) {
+            return $next($request);
+        }
+        $tenant = auth()->user()->tenant;
+        if (!$tenant || !$tenant->feature($feature)) {
             abort(403, 'This feature is not available in your plan.');
         }
         return $next($request);

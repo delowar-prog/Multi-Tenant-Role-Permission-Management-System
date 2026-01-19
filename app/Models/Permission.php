@@ -93,18 +93,4 @@ class Permission extends SpatiePermission
 
         return $query->first();
     }
-
-    public function scopeTenant(Builder $query): Builder
-    {
-        // 🔥 Super Admin → all permissions
-        if (auth()->check() && auth()->user()?->is_super_admin) {
-            return $query;
-        }
-
-        // ✅ get actual team column name (team_id)
-        $teamKey = app(PermissionRegistrar::class)->teamsKey;
-        // OR: config('permission.team_foreign_key');
-
-        return $query->where($teamKey, auth()->user()->tenant_id);
-    }
 }

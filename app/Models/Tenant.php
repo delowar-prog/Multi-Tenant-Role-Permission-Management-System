@@ -10,10 +10,16 @@ class Tenant extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'trial_ends_at' => 'datetime',
+    ];
+
     protected $fillable = [
         'name',
         'plan_id',
+        'subscription_started_at',
         'subscription_expires_at',
+        'trial_ends_at'
         // যদি আরও ফিল্ড থাকে, যেমন 'domain', 'uuid', add here
     ];
     public $incrementing = false;
@@ -55,5 +61,28 @@ class Tenant extends Model
         }
 
         return (bool) ($features[$key] ?? $default);
+    }
+
+    public function roles()
+    {
+        return $this->hasMany(Role::class, 'team_id');
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(TenantSubscription::class);
+    }
+
+
+    public function isOnTrial(): bool
+    {
+        return $this->trial_ends_at !== null
+            && now()->lt($this->trial_ends_at);
+    }
+
+    public function isTrialExpired(): bool
+    {
+        return $this->trial_ends_at !== null
+            && now()->gte($this->trial_ends_at);
     }
 }

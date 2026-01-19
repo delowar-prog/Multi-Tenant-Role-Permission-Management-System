@@ -17,9 +17,11 @@ class RoleSeeder extends Seeder
 
         // ✅ permissions list
         $permissions = [
-            'manage_users',
-            'manage_roles',
-            'manage_permissions',
+            'view-users',
+            'manage-users',
+            'view-permissions',
+            'view-roles',
+            'manage-roles',
         ];
 
         // ✅ create permissions (GLOBAL)
