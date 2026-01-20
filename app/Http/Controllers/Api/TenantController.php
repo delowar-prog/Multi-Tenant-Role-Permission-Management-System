@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class TenantController extends Controller
 {
@@ -13,7 +14,7 @@ class TenantController extends Controller
         return response()->json($tenant);
     }
 
-     public function update(Request $request)
+    public function update(Request $request)
     {
         $tenant = $request->user()->tenant;
 
@@ -27,8 +28,14 @@ class TenantController extends Controller
             'phone' => 'nullable|string|max:50',
         ]);
 
-        // Upload logo
+
+        //If Logo input
         if ($request->hasFile('logo')) {
+            // 🔴 Delete old logo if exists
+            if ($tenant->logo && Storage::disk('public')->exists($tenant->logo)) {
+                Storage::disk('public')->delete($tenant->logo);
+            }
+            // Upload logo
             $path = $request->file('logo')->store('tenants/logos', 'public');
             $data['logo'] = $path;
         }

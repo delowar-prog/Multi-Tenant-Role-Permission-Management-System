@@ -43,7 +43,10 @@ class AuthController
 
             if ($plan) {
                 $tenantData['plan_id'] = $plan->id;
-                $tenantData['billing_cycle'] = $plan->billing_cycle;
+                $tenantData['name'] = $fields['name'];
+                $tenantData['email'] = $fields['email'];
+                $tenantData['phone'] = $fields['phone'];
+                $tenantData['address'] = $fields['address'];
                 $tenantData['subscription_started_at'] = now();
                 $tenantData['subscription_expires_at'] = now()->addDays($plan->duration_days);
                 $tenantData['subscription_status'] = 'active';

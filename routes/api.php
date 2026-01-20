@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthorController;
 use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BillingController;
+use App\Http\Controllers\Api\ImpersonationController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\UserController;
@@ -62,4 +64,9 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::apiResource('authors', AuthorController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('plans', PlanController::class);
+
+    //Super Admin URL
+    Route::get('/all-tenant', [AdminUserController::class, 'index']);
+
+    Route::post('/admin/impersonate/{tenant}',[ImpersonationController::class, 'start']);
 });

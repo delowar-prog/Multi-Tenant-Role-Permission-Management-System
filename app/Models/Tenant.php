@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 class Tenant extends Model
 {
     use HasFactory;
-
+    protected $appends = ['logo_url'];
     protected $casts = [
         'trial_ends_at' => 'datetime',
     ];
@@ -39,6 +39,12 @@ class Tenant extends Model
     public function users()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function owner()
+    {
+        return $this->hasOne(User::class)
+            ->where('is_woner', true);
     }
 
     public function plan()
@@ -88,5 +94,12 @@ class Tenant extends Model
     {
         return $this->trial_ends_at !== null
             && now()->gte($this->trial_ends_at);
+    }
+
+    public function getLogoUrlAttribute(): string|null
+    {
+        return $this->logo
+            ? asset('storage/' . $this->logo)
+            : null;
     }
 }
