@@ -24,7 +24,7 @@ Route::post('/reset-password', [ResetPasswordController::class, 'reset']);
 Route::get('/landing/plans', [PlanController::class, 'landingIndex']);
 Route::get('/landing/plans/{plan}', [PlanController::class, 'landingShow']);
 
-Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
+Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
@@ -69,4 +69,5 @@ Route::middleware(['auth:sanctum', 'tenant.permission'])->group(function () {
     Route::get('/all-tenant', [AdminUserController::class, 'index']);
 
     Route::post('/admin/impersonate/{tenant}',[ImpersonationController::class, 'start']);
+    Route::post('/impersonation/exit',[ImpersonationController::class, 'exit']);
 });

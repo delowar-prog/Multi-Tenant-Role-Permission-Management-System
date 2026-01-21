@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckTenantSubscription;
 use App\Http\Middleware\EnsureFeatureEnabled;
+use App\Http\Middleware\ResolveTenantFromToken;
 use App\Http\Middleware\SetTenantPermission;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.permission' => SetTenantPermission::class,
             'tenant.subscription' => CheckTenantSubscription::class,
             'feature' => EnsureFeatureEnabled::class,
+            'tenant.resolve' => ResolveTenantFromToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

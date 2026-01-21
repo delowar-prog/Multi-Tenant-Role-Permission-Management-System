@@ -71,6 +71,7 @@ class AuthController
                 'email' => $fields['email'],
                 'password' => Hash::make($fields['password']),
                 'is_super_admin' => false,
+                'is_woner' => true,
                 'phone' => $fields['phone'],
                 'address' => $fields['address']
             ]);
