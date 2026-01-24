@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthorController;
+use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +64,7 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
     Route::post('/tenant/update', [TenantController::class, 'update']);
 
     Route::apiResource('authors', AuthorController::class);
+    Route::apiResource('branches', BranchController::class);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('plans', PlanController::class);
 

@@ -83,6 +83,11 @@ class Tenant extends Model
         return $this->hasMany(TenantSubscription::class);
     }
 
+    public function branches()
+    {
+        return $this->hasMany(Branch::class);
+    }
+
 
     public function isOnTrial(): bool
     {

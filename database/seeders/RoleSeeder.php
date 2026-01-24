@@ -22,6 +22,10 @@ class RoleSeeder extends Seeder
             'view-permissions',
             'view-roles',
             'manage-roles',
+            'view-branches',
+            'create-branches',
+            'update-branches',
+            'delete-branches',
         ];
 
         // ✅ create permissions (GLOBAL)
