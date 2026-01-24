@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -14,7 +16,16 @@ class UserController extends Controller
         $this->middleware('permission:view-users')
             ->only(['index', 'show']);
         $this->middleware('permission:manage-users')
-            ->only(['index', 'assignRole', 'removeRole', 'getRoles']);
+            ->only([
+                'index',
+                'assignRole',
+                'removeRole',
+                'getRoles',
+                'assignBranch',
+                'removeBranch',
+                'syncBranches',
+                'getBranches',
+            ]);
     }
     /**
      * Assign a role to a user.
@@ -161,31 +172,50 @@ class UserController extends Controller
     //create New user under a tenant
     public function store(Request $request)
     {
-        $request->validate([
+        $tenantId = auth()->user()->tenant_id;
+        if (! $tenantId && $request->filled('branches')) {
+            throw ValidationException::withMessages([
+                'branches' => 'User has no tenant assigned.',
+            ]);
+        }
+
+        $rules = [
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'phone' => 'nullable|string|max:11',
-            'address' => 'nullable|string|max:200'
-        ]);
+            'address' => 'nullable|string|max:200',
+            'branches' => 'nullable|array',
+        ];
+
+        if ($tenantId) {
+            $rules['branches.*'] = ['uuid', $this->branchExistsRule($tenantId)];
+        }
+
+        $validated = $request->validate($rules);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'phone'    => $request->phone,
-            'address'    => $request->address,
-            // tenant_id পাঠাতে হবে না
+            'name'     => $validated['name'],
+            'email'    => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'phone'    => $validated['phone'] ?? null,
+            'address'    => $validated['address'] ?? null,
+            // tenant_id should not be sent
         ]);
 
-        return response()->json($user);
+        if (! empty($validated['branches'])) {
+            $user->branches()->sync($validated['branches']);
+        }
+
+        return response()->json($user->load('branches'));
     }
+
     /**
      * Display a listing of users with their roles and permissions.
      */
     public function index()
     {
-        $users = User::with(['roles', 'permissions'])->tenant()->paginate();
+        $users = User::with(['roles', 'permissions', 'branches'])->tenant()->paginate();
 
         return response()->json($users);
     }
@@ -195,6 +225,94 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return response()->json($user->load(['roles', 'permissions']));
+        return response()->json($user->load(['roles', 'permissions', 'branches']));
+    }
+
+    public function assignBranch(Request $request, User $user)
+    {
+        $tenantId = $this->branchTenantIdFor($user);
+
+        $validated = $request->validate([
+            'branch_id' => ['required', 'uuid', $this->branchExistsRule($tenantId)],
+        ]);
+
+        $user->branches()->syncWithoutDetaching([$validated['branch_id']]);
+
+        return response()->json([
+            'message' => 'Branch assigned successfully',
+            'user' => $user->load('branches'),
+        ]);
+    }
+
+    public function removeBranch(Request $request, User $user)
+    {
+        $tenantId = $this->branchTenantIdFor($user);
+
+        $validated = $request->validate([
+            'branch_id' => ['required', 'uuid', $this->branchExistsRule($tenantId)],
+        ]);
+
+        $user->branches()->detach($validated['branch_id']);
+
+        return response()->json([
+            'message' => 'Branch removed successfully',
+            'user' => $user->load('branches'),
+        ]);
+    }
+
+    public function syncBranches(Request $request, User $user)
+    {
+        $tenantId = $this->branchTenantIdFor($user);
+
+        $validated = $request->validate([
+            'branches' => 'required|array',
+            'branches.*' => ['uuid', $this->branchExistsRule($tenantId)],
+        ]);
+
+        $user->branches()->sync($validated['branches']);
+
+        return response()->json([
+            'message' => 'Branches synced successfully',
+            'user' => $user->load('branches'),
+        ]);
+    }
+
+    public function getBranches(User $user)
+    {
+        return response()->json([
+            'user' => $user,
+            'branches' => $user->branches,
+        ]);
+    }
+
+    private function branchTenantIdFor(User $user): string
+    {
+        if (
+            ! auth()->user()->is_super_admin &&
+            $user->tenant_id &&
+            $user->tenant_id !== auth()->user()->tenant_id
+        ) {
+            throw ValidationException::withMessages([
+                'user' => 'User does not belong to your tenant.',
+            ]);
+        }
+
+        $tenantId = auth()->user()->is_super_admin
+            ? $user->tenant_id
+            : auth()->user()->tenant_id;
+
+        if (! $tenantId) {
+            throw ValidationException::withMessages([
+                'branches' => 'User has no tenant assigned.',
+            ]);
+        }
+
+        return $tenantId;
+    }
+
+    private function branchExistsRule(string $tenantId)
+    {
+        return Rule::exists('branches', 'id')->where('tenant_id', $tenantId);
     }
 }
+

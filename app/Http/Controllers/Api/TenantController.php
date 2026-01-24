@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -12,6 +13,17 @@ class TenantController extends Controller
     {
         $tenant = $request->user()->tenant;
         return response()->json($tenant);
+    }
+
+    public function tenants(Request $request)
+    {
+        $query = Tenant::query()->select(['id', 'name'])->orderBy('name');
+
+        if (! $request->user()->is_super_admin) {
+            $query->where('id', $request->user()->tenant_id);
+        }
+
+        return response()->json($query->get());
     }
 
     public function update(Request $request)

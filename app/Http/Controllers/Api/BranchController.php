@@ -10,10 +10,10 @@ class BranchController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:view-branches')->only(['index', 'show']);
-        $this->middleware('permission:create-branches')->only(['store']);
-        $this->middleware('permission:update-branches')->only(['update']);
-        $this->middleware('permission:delete-branches')->only(['destroy']);
+        // $this->middleware('permission:view-branches')->only(['index', 'show']);
+        // $this->middleware('permission:create-branches')->only(['store']);
+        // $this->middleware('permission:update-branches')->only(['update']);
+        // $this->middleware('permission:delete-branches')->only(['destroy']);
     }
 
     public function index(Request $request)

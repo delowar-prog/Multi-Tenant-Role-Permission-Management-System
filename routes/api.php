@@ -54,6 +54,10 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
     Route::post('users/{user}/remove-role', [UserController::class, 'removeRole']);
     Route::post('users/{user}/sync-roles', [UserController::class, 'syncRoles']);
     Route::get('users/{user}/roles', [UserController::class, 'getRoles']);
+    Route::post('users/{user}/assign-branch', [UserController::class, 'assignBranch']);
+    Route::post('users/{user}/remove-branch', [UserController::class, 'removeBranch']);
+    Route::post('users/{user}/sync-branches', [UserController::class, 'syncBranches']);
+    Route::get('users/{user}/branches', [UserController::class, 'getBranches']);
     Route::post('users/{user}/assign-permission', [UserController::class, 'assignPermission']);
     Route::post('users/{user}/remove-permission', [UserController::class, 'removePermission']);
     Route::post('users/{user}/sync-permissions', [UserController::class, 'syncPermissions']);
@@ -61,6 +65,7 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
 
     //Accounts Setting
     Route::get('/tenant', [TenantController::class, 'show']);
+    Route::get('/tenants', [TenantController::class, 'tenants']);
     Route::post('/tenant/update', [TenantController::class, 'update']);
 
     Route::apiResource('authors', AuthorController::class);
