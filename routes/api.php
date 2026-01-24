@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityLogController;
 use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthorController;
 use App\Http\Controllers\Api\CategoryController;
@@ -67,7 +68,8 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
 
     //Super Admin URL
     Route::get('/all-tenant', [AdminUserController::class, 'index']);
-
     Route::post('/admin/impersonate/{tenant}',[ImpersonationController::class, 'start']);
     Route::post('/impersonation/exit',[ImpersonationController::class, 'exit']);
+    Route::get('/alllogs', [ActivityLogController::class, 'getLogs']);
+
 });

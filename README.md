@@ -66,6 +66,26 @@ php artisan db:seed --class=SuperAdminSeeder
 
 This seeds a global `super-admin` role, assigns all permissions, and sets `is_super_admin = true` for `admin@gmail.com`.
 
+## Impersonation (super admin)
+
+Super admins can impersonate a tenant owner to troubleshoot tenant-scoped behavior. The impersonation token carries tenant context and expires after 30 minutes.
+
+Flow:
+
+1. Use a super admin token to request an impersonation token.
+2. Use the returned impersonation token as `Authorization: Bearer <token>` for tenant requests.
+3. Call the exit endpoint with the impersonation token to end the session (deletes the token).
+
+Endpoints:
+
+- POST `/api/admin/impersonate/{tenant}` (super admin only)
+- POST `/api/impersonation/exit` (requires impersonation token)
+
+Notes:
+
+- The tenant is resolved from the token ability `tenant_id:<uuid>` (`app/Http/Middleware/ResolveTenantFromToken.php`).
+- The impersonation token is issued to the tenant owner and includes abilities: `impersonate`, `tenant_id:<uuid>`, and `impersonator:<id>`.
+
 ## Authentication
 
 - POST `/api/register`
@@ -111,6 +131,7 @@ All routes below require `auth:sanctum` and `tenant.permission` unless noted.
 - Permissions: `/api/permissions`
 - Authors: `/api/authors`
 - Categories: `/api/categories`
+- Impersonation: `/api/admin/impersonate/{tenant}`, `/api/impersonation/exit`
 - Super admin routes are grouped under `super.admin` middleware in `routes/api.php`.
 
 ## New Module Checklist (avoid permission breakage)
@@ -123,4 +144,3 @@ All routes below require `auth:sanctum` and `tenant.permission` unless noted.
 - Scope `unique`/`exists` validation rules by tenant in controllers.
 - Reset permission cache after adding new permissions: `php artisan permission:cache-reset`.
 - Keep `guard_name` consistent (typically `web`) across roles/permissions.
-

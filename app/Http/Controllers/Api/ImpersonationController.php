@@ -33,6 +33,15 @@ class ImpersonationController extends Controller
             expiresAt: now()->addMinutes(30)
         );
 
+        activity('impersonation')
+            ->causedBy(auth()->user()) // admin
+            ->withProperties([
+                'tenant_id' => $tenant->id,
+                'tenant_name' => $tenant->name,
+                'admin_id' => auth()->id(),
+            ])
+            ->log('Impersonation started');
+
         return response()->json([
             'impersonation_token' => $token->plainTextToken,
             'expires_in' => 1800,
@@ -45,9 +54,17 @@ class ImpersonationController extends Controller
 
         if ($token && $this->isImpersonationToken($token)) {
             $token->delete();
+
+            activity('impersonation')
+                ->causedBy(auth()->user())
+                ->withProperties([
+                    'tenant_id' => tenant()?->id,
+                    'admin_id' => impersonatorId(),
+                ])
+                ->log('Impersonation ended');
+
             return response()->json(['message' => 'Exited']);
         }
-
         return response()->json(['message' => 'Not impersonating.']);
     }
 

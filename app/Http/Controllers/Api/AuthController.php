@@ -50,7 +50,7 @@ class AuthController
                 $tenantData['subscription_started_at'] = now();
                 $tenantData['subscription_expires_at'] = now()->addDays($plan->duration_days);
                 $tenantData['subscription_status'] = 'active';
-                $tenantData['trial_ends_at'] = $plan->trial_days ? now()->addDays($plan->trial_days): null;
+                $tenantData['trial_ends_at'] = $plan->trial_days ? now()->addDays($plan->trial_days) : null;
             }
 
             $tenant = Tenant::create($tenantData);
@@ -125,7 +125,15 @@ class AuthController
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
-
+        // log save
+        activity('audit')
+            ->causedBy(auth()->user())
+            ->event('login')    
+            ->withProperties([
+                'ip' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ])
+            ->log('User logged in');
         // Prepare response
         return response()->json([
             'user' => [

@@ -27,6 +27,14 @@ class UserController extends Controller
 
         $user->assignRole($request->role);
 
+        activity('audit')
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'role' => $request->role,
+            ])
+            ->log('Role assigned');
+
         return response()->json([
             'message' => 'Role assigned successfully',
             'user' => $user->load('roles')
@@ -89,6 +97,14 @@ class UserController extends Controller
         ]);
 
         $user->givePermissionTo($request->permission);
+
+        activity('audit')
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'role' => $request->permission,
+            ])
+            ->log('Role assigned');
 
         return response()->json([
             'message' => 'Permission assigned successfully',
