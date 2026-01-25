@@ -70,6 +70,7 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
 
     Route::apiResource('authors', AuthorController::class);
     Route::apiResource('branches', BranchController::class);
+    Route::get('/branches/select', [BranchController::class, 'select']);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('plans', PlanController::class);
 

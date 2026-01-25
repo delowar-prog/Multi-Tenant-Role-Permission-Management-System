@@ -83,6 +83,19 @@ class AuthController
             $role = Role::where('name', 'tenant-admin')->first();
             // 6️⃣ Assign role to user
             $user->assignRole($role);
+
+            // 🆕 Create Default Branch "Main"
+            $branch = \App\Models\Branch::create([
+                'tenant_id' => $tenant->id,
+                'name' => 'Main',
+                'email' => $fields['email'],
+                'phone' => $fields['phone'],
+                'address' => $fields['address'] ?? null,
+            ]);
+
+            // 🆕 Assign User to Branch
+            $user->branches()->attach($branch->id);
+
             DB::commit();
 
             // 7️⃣ Create auth token

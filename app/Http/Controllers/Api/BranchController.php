@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BranchController extends Controller
 {
@@ -22,6 +23,13 @@ class BranchController extends Controller
         $perPage = $perPage > 0 ? $perPage : 15;
 
         return Branch::paginate($perPage);
+    }
+
+    public function select()
+    {
+         return Branch::query()
+        ->select('id', 'name')
+        ->get()->toArray();
     }
 
     public function store(Request $request)

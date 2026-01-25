@@ -215,7 +215,10 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with(['roles', 'permissions', 'branches'])->tenant()->paginate();
+        $query = User::with(['roles', 'permissions', 'branches'])->tenant();
+        $this->applyBranchFilter($query);
+
+        $users = $query->paginate();
 
         return response()->json($users);
     }
@@ -225,7 +228,14 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        return response()->json($user->load(['roles', 'permissions', 'branches']));
+        $query = User::with(['roles', 'permissions', 'branches'])
+            ->tenant()
+            ->whereKey($user->getKey());
+        $this->applyBranchFilter($query);
+
+        $user = $query->firstOrFail();
+
+        return response()->json($user);
     }
 
     public function assignBranch(Request $request, User $user)
@@ -313,6 +323,26 @@ class UserController extends Controller
     private function branchExistsRule(string $tenantId)
     {
         return Rule::exists('branches', 'id')->where('tenant_id', $tenantId);
+    }
+
+    private function applyBranchFilter($query): void
+    {
+        $authUser = auth()->user();
+
+        if (! $authUser || $authUser->is_super_admin || $authUser->is_woner) {
+            return;
+        }
+
+        $branchIds = $authUser->branches()->pluck('branches.id');
+
+        if ($branchIds->isEmpty()) {
+            $query->whereRaw('1 = 0');
+            return;
+        }
+
+        $query->whereHas('branches', function ($branchQuery) use ($branchIds) {
+            $branchQuery->whereIn('branches.id', $branchIds);
+        });
     }
 }
 
