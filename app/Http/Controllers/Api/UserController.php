@@ -172,12 +172,8 @@ class UserController extends Controller
     //create New user under a tenant
     public function store(Request $request)
     {
-        $tenantId = auth()->user()->tenant_id;
-        if (! $tenantId && $request->filled('branches')) {
-            throw ValidationException::withMessages([
-                'branches' => 'User has no tenant assigned.',
-            ]);
-        }
+        $authUser = auth()->user();
+        $tenantId = $authUser->tenant_id;
 
         $rules = [
             'name'     => 'required|string|max:255',
@@ -185,13 +181,11 @@ class UserController extends Controller
             'password' => 'required|string|min:6',
             'phone' => 'nullable|string|max:11',
             'address' => 'nullable|string|max:200',
-            'branches' => 'nullable|array',
         ];
-
-        if ($tenantId) {
-            $rules['branches.*'] = ['uuid', $this->branchExistsRule($tenantId)];
+        // 🔹 If super admin → tenant_id must be given explicitly
+        if ($authUser->is_super_admin) {
+            $rules['tenant_id'] = ['required', 'uuid', 'exists:tenants,id'];
         }
-
         $validated = $request->validate($rules);
 
         $user = User::create([
@@ -200,14 +194,18 @@ class UserController extends Controller
             'password' => Hash::make($validated['password']),
             'phone'    => $validated['phone'] ?? null,
             'address'    => $validated['address'] ?? null,
-            // tenant_id should not be sent
+
+            // 🔹 If super admin → use request tenant_id
+            // 🔹 Else → trait will fill tenant_id from auth user
+            'tenant_id' => $authUser->is_super_admin
+                ? $validated['tenant_id']
+                : null,
         ]);
 
-        if (! empty($validated['branches'])) {
-            $user->branches()->sync($validated['branches']);
-        }
-
-        return response()->json($user->load('branches'));
+        return response()->json([
+            'message' => 'User created successfully',
+            'user' => $user
+        ]);
     }
 
     /**
@@ -345,4 +343,3 @@ class UserController extends Controller
         });
     }
 }
-
