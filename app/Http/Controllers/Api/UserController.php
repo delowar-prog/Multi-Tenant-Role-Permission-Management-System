@@ -17,7 +17,6 @@ class UserController extends Controller
             ->only(['index', 'show']);
         $this->middleware('permission:manage-users')
             ->only([
-                'index',
                 'assignRole',
                 'removeRole',
                 'getRoles',
