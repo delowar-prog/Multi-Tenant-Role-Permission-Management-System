@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -198,9 +200,17 @@ class UserController extends Controller
             // 🔹 Else → trait will fill tenant_id from auth user
             'tenant_id' => $authUser->is_super_admin
                 ? $validated['tenant_id']
-                : null,
+                : $authUser->tenant_id,
         ]);
-
+        // ✅ Assign default branch and set active_branch_id
+        $defaultBranch = Branch::where('tenant_id', $user->tenant_id)->first();
+        if ($defaultBranch) {
+            DB::transaction(function () use ($user, $defaultBranch) {
+                $user->branches()->syncWithoutDetaching([$defaultBranch->id]);
+                $user->active_branch_id = $defaultBranch->id;
+                $user->save();
+            });
+        }
         return response()->json([
             'message' => 'User created successfully',
             'user' => $user
@@ -212,13 +222,40 @@ class UserController extends Controller
      */
     public function index()
     {
-        $query = User::with(['roles', 'permissions', 'branches'])->tenant();
-        $this->applyBranchFilter($query);
+        $user = auth()->user();
 
-        $users = $query->paginate();
+        $query = User::with(['roles', 'permissions', 'branches']);
 
-        return response()->json($users);
+        // Super admin → all users
+        if ($user->is_super_admin) {
+            return response()->json(
+                $query->paginate()
+            );
+        }
+
+        // Tenant restriction
+        $query->where('tenant_id', $user->tenant_id);
+
+         // Tenant Owner → all users of tenant
+        if ($user->is_woner) {
+            return response()->json(
+                $query->paginate()
+            );
+        }
+
+
+        // Branch restriction for normal users
+        if (! $user->is_support_admin && $user->active_branch_id) {
+            $query->whereHas('branches', function ($q) use ($user) {
+                $q->where('branches.id', $user->active_branch_id);
+            });
+        }
+
+        return response()->json(
+            $query->paginate()
+        );
     }
+
 
     /**
      * Display the specified user with roles and permissions.
@@ -240,10 +277,40 @@ class UserController extends Controller
         $tenantId = $this->branchTenantIdFor($user);
 
         $validated = $request->validate([
-            'branch_id' => ['required', 'uuid', $this->branchExistsRule($tenantId)],
+            'branches' => 'array',
+            'branches.*' => ['uuid', $this->branchExistsRule($tenantId)],
+            'branch_ids' => 'array',
+            'branch_ids.*' => ['uuid', $this->branchExistsRule($tenantId)],
+            'branch_id' => [
+                'uuid',
+                $this->branchExistsRule($tenantId),
+                'required_without_all:branches,branch_ids',
+            ],
         ]);
 
-        $user->branches()->syncWithoutDetaching([$validated['branch_id']]);
+        $branchIds = [];
+
+        if (! empty($validated['branches'])) {
+            $branchIds = array_merge($branchIds, $validated['branches']);
+        }
+
+        if (! empty($validated['branch_ids'])) {
+            $branchIds = array_merge($branchIds, $validated['branch_ids']);
+        }
+
+        if (! empty($validated['branch_id'])) {
+            $branchIds[] = $validated['branch_id'];
+        }
+
+        $branchIds = array_values(array_unique($branchIds));
+
+        if (empty($branchIds)) {
+            throw ValidationException::withMessages([
+                'branches' => 'At least one branch is required.',
+            ]);
+        }
+
+        $user->branches()->sync($branchIds);
 
         return response()->json([
             'message' => 'Branch assigned successfully',

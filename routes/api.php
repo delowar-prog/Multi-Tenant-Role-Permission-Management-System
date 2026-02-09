@@ -44,8 +44,8 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
     Route::get('/profile', [ProfileController::class, 'show']);
 
     // ✅ Role & Permission CRUD
-    Route::apiResource('roles', RoleController::class)->middleware('feature:branding');
-    Route::apiResource('permissions', PermissionController::class)->middleware('feature:branding');
+    Route::apiResource('roles', RoleController::class);
+    Route::apiResource('permissions', PermissionController::class);
     Route::get('all-permissions', [PermissionController::class, 'getPermissions']);
 
     // ✅ User CRUD and role/permission management

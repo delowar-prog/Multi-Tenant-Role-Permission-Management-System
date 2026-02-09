@@ -1,0 +1,46 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('support_ticket_logs', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('ticket_id')
+                ->constrained('support_tickets')
+                ->cascadeOnDelete();
+
+            $table->uuid('branch_id')->nullable();
+
+            $table->string('action');
+            // created, replied, assigned, status_changed, closed
+
+            $table->foreignId('performed_by')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
+            $table->foreign('branch_id')
+                ->references('id')
+                ->on('branches')
+                ->onDelete('cascade');
+
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('support_ticket_logs');
+    }
+};

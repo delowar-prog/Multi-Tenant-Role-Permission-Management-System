@@ -13,7 +13,10 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->boolean('is_super_admin')->default(false)->after('password');
-            $table->boolean('is_woner')->default(false)->after('is_super_admin');
+            $table->boolean('is_support_admin')->default(false)->after('is_super_admin');
+            $table->boolean('is_woner')->default(false)->after('is_support_admin');
+            $table->uuid('active_branch_id')->nullable()->index();
+            $table->foreign('active_branch_id')->references('id')->on('branches')->onDelete('cascade');
         });
     }
 

@@ -22,14 +22,15 @@ class BranchController extends Controller
         $perPage = (int) $request->query('perpage', 15);
         $perPage = $perPage > 0 ? $perPage : 15;
 
-        return Branch::paginate($perPage);
+        return $this->branchVisibility(Branch::tenant())->paginate($perPage);
     }
 
     public function select()
     {
-         return Branch::query()
-        ->select('id', 'name')
-        ->get()->toArray();
+        return $this->branchVisibility(Branch::query())
+            ->select('id', 'name')
+            ->get()
+            ->toArray();
     }
 
     public function store(Request $request)
@@ -53,6 +54,8 @@ class BranchController extends Controller
 
     public function show(Branch $branch)
     {
+        $this->authorizeBranchVisibility($branch);
+
         return $branch;
     }
 
@@ -80,5 +83,44 @@ class BranchController extends Controller
         $branch->delete();
 
         return response()->json(['message' => 'Branch deleted']);
+    }
+
+    private function branchVisibility($query)
+    {
+        if (! auth()->check()) {
+            return $query;
+        }
+
+        $user = auth()->user();
+
+        if ($user->is_super_admin || $user->is_support_admin) {
+            return $query;
+        }
+        if ($user->is_woner) {
+            return $query;
+        }
+
+        if ($user->active_branch_id) {
+            $query->where('id', $user->active_branch_id);
+        }
+
+        return $query;
+    }
+
+    private function authorizeBranchVisibility(Branch $branch): void
+    {
+        if (! auth()->check()) {
+            abort(403);
+        }
+
+        $user = auth()->user();
+
+        if ($user->is_super_admin || $user->is_support_admin) {
+            return;
+        }
+
+        if (! $user->active_branch_id || $branch->id !== $user->active_branch_id) {
+            abort(403);
+        }
     }
 }

@@ -95,6 +95,9 @@ class AuthController
 
             // 🆕 Assign User to Branch
             $user->branches()->attach($branch->id);
+            // ✅ Set active branch
+            $user->active_branch_id = $branch->id;
+            $user->save();
 
             DB::commit();
 
@@ -141,7 +144,7 @@ class AuthController
         // log save
         activity('audit')
             ->causedBy(auth()->user())
-            ->event('login')    
+            ->event('login')
             ->withProperties([
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),

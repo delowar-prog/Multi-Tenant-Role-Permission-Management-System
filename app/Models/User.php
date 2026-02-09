@@ -37,19 +37,7 @@ class User extends Authenticatable
     /**
      * Scope: only current tenant users & Super Admin can access all tenant
      */
-    public function scopeTenant($query)
-    {
-        if (
-            auth()->check() &&
-            ! auth()->user()->is_super_admin
-        ) {
-            return $query->where('tenant_id', auth()->user()->tenant_id);
-        }
-
-        return $query;
-    }
-
-
+    
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
@@ -57,7 +45,13 @@ class User extends Authenticatable
 
     public function branches()
     {
-        return $this->belongsToMany(Branch::class)->withTimestamps();
+        return $this->belongsToMany(Branch::class);
+    }
+
+    // Active branch (important)
+    public function activeBranch()
+    {
+        return $this->belongsTo(Branch::class, 'active_branch_id');
     }
 
     /**
