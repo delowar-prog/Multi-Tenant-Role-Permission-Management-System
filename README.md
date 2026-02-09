@@ -33,7 +33,8 @@ Key pieces:
 
 - `create_tenants_table`: creates `tenants` with UUID `id`, `name`, and optional `domain` (add more fields as needed).
 - `app/Models/User.php`: includes `tenant_id` in `$fillable`, auto-assigns it from the authenticated user on create, and defines `tenant()` relation.
-- `app/Traits/AssignTenant.php`: fills `tenant_id` on create using the authenticated user.
+- `app/Traits/AssignTenant.php`: fills `tenant_id` on create; if a table has `branch_id`, it also assigns `branch_id` from `active_branch_id` (skipped for super/support admins).
+- `app/Traits/BelongsToTenant.php` + `app/Models/TenantModel.php`: applies a global scope for `tenant_id` (and `branch_id` when present), auto-assigns tenant/branch on create, and protects `tenant_id`/`branch_id` from being changed on update for non-admins.
 - `AuthController.php`: registration creates a tenant and its first user in a transaction; login blocks users without a tenant (except super admin).
 - `config/permission.php`: enables Spatie teams (`'teams' => true`) and uses custom `Role`/`Permission` models.
 - `create_permission_tables.php`: creates Spatie tables with teams enabled, and later migrations adjust the team key to UUIDs.
@@ -144,3 +145,11 @@ All routes below require `auth:sanctum` and `tenant.permission` unless noted.
 - Scope `unique`/`exists` validation rules by tenant in controllers.
 - Reset permission cache after adding new permissions: `php artisan permission:cache-reset`.
 - Keep `guard_name` consistent (typically `web`) across roles/permissions.
+
+## Branch Scoping (optional)
+
+If your tables include `branch_id`, scoping is enforced alongside `tenant_id`:
+
+- `BelongsToTenant` global scope limits results to the current tenant and (when applicable) the user's `active_branch_id`.
+- `AssignTenant` auto-sets `branch_id` on create for non-super/support admins.
+- Updates to `tenant_id` or `branch_id` are ignored for non-admins (values revert to originals).
