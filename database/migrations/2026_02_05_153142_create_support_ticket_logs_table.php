@@ -13,25 +13,12 @@ return new class extends Migration
     {
         Schema::create('support_ticket_logs', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('ticket_id')
-                ->constrained('support_tickets')
-                ->cascadeOnDelete();
-
+            $table->foreignId('ticket_id')->constrained('support_tickets')->cascadeOnDelete();
             $table->uuid('branch_id')->nullable();
-
             $table->string('action');
             // created, replied, assigned, status_changed, closed
-
-            $table->foreignId('performed_by')
-                ->constrained('users')
-                ->cascadeOnDelete();
-
-            $table->foreign('branch_id')
-                ->references('id')
-                ->on('branches')
-                ->onDelete('cascade');
-
+            $table->foreignId('performed_by')->constrained('users')->cascadeOnDelete();
+            $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->timestamps();
         });
     }

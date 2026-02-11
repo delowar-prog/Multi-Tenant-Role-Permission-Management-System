@@ -17,10 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->foreign('tenant_id')
-                ->references('id')
-                ->on('tenants')
-                ->onDelete('cascade');
+            $table->foreign('tenant_id')->references('id')->on('tenants')->onDelete('cascade');
         });
     }
 

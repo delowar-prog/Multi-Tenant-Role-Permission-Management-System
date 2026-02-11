@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AdminUserController;
 use App\Http\Controllers\Api\AuthorController;
 use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\SupportCategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -72,6 +73,8 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
     Route::apiResource('branches', BranchController::class);
     Route::get('/branches/select', [BranchController::class, 'select']);
     Route::apiResource('categories', CategoryController::class);
+    Route::apiResource('support-categories', SupportCategoryController::class);
+    Route::get('/select-support-categories', SupportCategoryController::class, 'categories');
     Route::apiResource('plans', PlanController::class);
 
     //Super Admin URL
