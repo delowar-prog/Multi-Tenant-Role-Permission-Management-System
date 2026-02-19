@@ -3,11 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\BelongsToTenantBranch;
 
-class SupportTicket extends Model
+class SupportTicket extends TenantModel
 {
-    use BelongsToTenantBranch;
 
     protected $fillable = [
         'tenant_id',
@@ -47,7 +45,7 @@ class SupportTicket extends Model
     public function messages()
     {
         return $this->hasMany(SupportMessage::class, 'ticket_id')
-                    ->latest();
+            ->latest();
     }
 
     public function assignedAgent()
@@ -58,5 +56,20 @@ class SupportTicket extends Model
     public function logs()
     {
         return $this->hasMany(SupportTicketLog::class);
+    }
+
+    public function scopeVisibleTo($query, $user)  //super admin, 
+    {
+        if ($user->is_super_admin || $user->is_support_admin) {
+            return $query;
+        }
+
+        $query->where('tenant_id', $user->tenant_id);
+
+        if (! $user->is_woner) {
+            $query->where('user_id', $user->id);
+        }
+
+        return $query;
     }
 }

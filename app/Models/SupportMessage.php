@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
-class SupportMessage extends Model
+class SupportMessage extends TenantModel
 {
-    //
+    protected $fillable = ['ticket_id', 'sender_id', 'sender_type', 'message', 'attachments'];
+    
+    protected $casts = [
+        'attachments' => 'array',
+    ];
 }

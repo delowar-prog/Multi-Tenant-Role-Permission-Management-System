@@ -50,7 +50,11 @@ class SupportCategoryController extends Controller
 
     public function categories()
     {
-        return SupportCategory::select('id', 'name')->get();
+        return SupportCategory::select('id', 'name')->get()->prepend([
+        'id' => null,
+        'name' => 'Select Category',
+    ])
+    ->values();
     }
 
     public function show(SupportCategory $supportCategory)

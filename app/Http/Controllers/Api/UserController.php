@@ -236,7 +236,7 @@ class UserController extends Controller
         // Tenant restriction
         $query->where('tenant_id', $user->tenant_id);
 
-         // Tenant Owner → all users of tenant
+        // Tenant Owner → all users of tenant
         if ($user->is_woner) {
             return response()->json(
                 $query->paginate()
@@ -407,5 +407,20 @@ class UserController extends Controller
         $query->whereHas('branches', function ($branchQuery) use ($branchIds) {
             $branchQuery->whereIn('branches.id', $branchIds);
         });
+    }
+
+    public function supportUser()
+    {
+        $authUser = auth()->user();
+        if (
+            ! $authUser ||
+            (! $authUser->is_super_admin && ! $authUser->is_support_admin)
+        ) {
+            abort(403, 'Unauthorized');
+        }
+
+        return User::where('is_super_admin', 1)
+            ->orWhere('is_support_admin', 1)
+            ->get();
     }
 }

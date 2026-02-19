@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\ResetPasswordController;
 use App\Http\Controllers\Api\PlanController;
 use App\Http\Controllers\Api\SslCommerzController;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\TicketController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -63,6 +64,7 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
     Route::post('users/{user}/remove-permission', [UserController::class, 'removePermission']);
     Route::post('users/{user}/sync-permissions', [UserController::class, 'syncPermissions']);
     Route::get('users/{user}/permissions', [UserController::class, 'getPermissions']);
+    Route::get('users/support-users', [UserController::class, 'supportUser']);
 
     //Accounts Setting
     Route::get('/tenant', [TenantController::class, 'show']);
@@ -74,7 +76,10 @@ Route::middleware(['auth:sanctum','tenant.resolve','tenant.permission'])->group(
     Route::get('/branches/select', [BranchController::class, 'select']);
     Route::apiResource('categories', CategoryController::class);
     Route::apiResource('support-categories', SupportCategoryController::class);
-    Route::get('/select-support-categories', SupportCategoryController::class, 'categories');
+    Route::get('/support-tickets', [TicketController::class, 'index']);
+    Route::post('/support-tickets', [TicketController::class, 'store']);
+    Route::get('/support-tickets/{id}', [TicketController::class, 'show']);
+    Route::get('/select-support-categories', [SupportCategoryController::class, 'categories']);
     Route::apiResource('plans', PlanController::class);
 
     //Super Admin URL
